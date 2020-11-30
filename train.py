@@ -50,8 +50,7 @@ from transformers import AdamW, WarmupLinearSchedule
 
 from dataset_utils import (compute_metrics, convert_examples_to_features,
                         output_modes, processors)
-import setGPU
-
+from data_util import WordSubstitude
 logger = logging.getLogger(__name__)
 
 ALL_MODELS = sum((tuple(conf.pretrained_config_archive_map.keys()) for conf in (BertConfig, XLNetConfig, XLMConfig)), ())
@@ -443,6 +442,11 @@ def main():
                         help="For distributed training: local_rank")
     parser.add_argument('--server_ip', type=str, default='', help="For distant debugging.")
     parser.add_argument('--server_port', type=str, default='', help="For distant debugging.")
+        parser.add_argument("--similarity_threshold", default=0.7, type=float,
+                        help="The similarity constraint to be considered as synonym.")
+    parser.add_argument("--perturbation_constraint", default=800, type=int,
+                        help="The maximum size of perturbation set of each word")
+
     args = parser.parse_args()
 
     if os.path.exists(args.output_dir) and os.listdir(args.output_dir) and args.do_train and not args.overwrite_output_dir:
@@ -512,11 +516,30 @@ def main():
         model = torch.nn.DataParallel(model)
 
     logger.info("Training/evaluation parameters %s", args)
+    similarity_threshold = args.similarity_threshold
+    perturbation_constraint = args.perturbation_constraint
+    pkl_file = open(os.path.join(args.data_dir, args.dataset_name + '_perturbation_constraint_pca' + str(similarity_threshold) + '_' + str(perturbation_constraint) + '.pkl'), 'rb')
+    perturb_pca = pickle.load(pkl_file)
+    pkl_file.close()
 
+    # shorten the perturbation set to desired length constraint
+    for key in perturb_pca.keys():
+        if len(perturb_pca[key]['set'])>perturbation_constraint:
 
+            tem_neighbor_count = 0
+            tem_neighbor_list = []
+            for tem_neighbor in perturb_pca[key]['set']:
+                tem_neighbor_list.append(tem_neighbor)
+                tem_neighbor_count += 1
+                if tem_neighbor_count >= perturbation_constraint:
+                    break
+            perturb_pca[key]['set'] = tem_neighbor_list
+            perturb_pca[key]['isdivide'] = 1
+
+    random_smooth = WordSubstitude(perturb_pca)
     # Training
     if args.do_train:
-        train_dataset = load_and_cache_examples(args, args.task_name, tokenizer, evaluate=False)
+        train_dataset = load_and_cache_examples_randomized(args, args.task_name, tokenizer, random_smooth, args.num_train_epochs, evaluate=False)
         global_step, tr_loss = train(args, train_dataset, model, tokenizer)
         logger.info(" global_step = %s, average loss = %s", global_step, tr_loss)
 

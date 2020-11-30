@@ -3,7 +3,7 @@ import numpy as np
 import torch
 import string
 
-with open('counterfitted_neighbors.json', 'r') as f:
+with open('counter-fitted-neighbors.json', 'r') as f:
     ws = json.load(f)
 
 class WordSubstitude:

@@ -29,11 +29,9 @@ from transformers import (WEIGHTS_NAME,
                           XLNetTokenizer
                           )
 
-from transformers import AdamW, WarmupLinearSchedule
 
 from dataset_utils import (compute_metrics, convert_examples_to_features,
                         output_modes, processors)
-import setGPU
 from data_util import WordSubstitude
 import json
 import pickle
@@ -674,7 +672,7 @@ def main():
     elif args.task_name == 'amazon':
         dataset_name = 'amazonfull'
 
-    pkl_file = open(args.data_dir + dataset_name + '_perturbation_constraint_pca' + str(similarity_threshold) + '_' + str(perturbation_constraint) + '.pkl', 'rb')
+    pkl_file = open(os.path.join(args.data_dir, dataset_name + '_perturbation_constraint_pca' + str(similarity_threshold) + '_' + str(perturbation_constraint) + '.pkl'), 'rb')
     perturb_pca = pickle.load(pkl_file)
     pkl_file.close()
 

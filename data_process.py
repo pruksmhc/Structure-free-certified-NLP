@@ -10,7 +10,7 @@ import argparse
 
 def get_wordembd(embd_path, data_path):
     word_embd = {}
-    embd_file = os.path.join(embd_file, 'counter-fitted-vectors.txt')
+    embd_file = os.path.join(embd_path, 'counter-fitted-vectors.txt')
     with open(embd_file, "r") as f:
         tem = f.readlines()
         for line in tem:
@@ -30,7 +30,7 @@ def get_wordembd(embd_path, data_path):
 
 def get_vocabluary(dataset, data_path, embd_path):
     print('Generate vocabulary')
-    pkl_file = open(embd_path + '/word_embd.pkl', 'rb')
+    pkl_file = open(data_path + '/word_embd.pkl', 'rb')
     word_embd = pickle.load(pkl_file)
     pkl_file.close()
 
@@ -258,21 +258,22 @@ def get_perturbation_set(dataset, data_path, similarity_threshold = 0.8, perturb
     num_word = len(key_list)
     dim_vec = vocab[key_list[0]]['vec'].shape[1]
     embd_matrix = np.zeros([num_word, dim_vec])
+    import pdb; pdb.set_trace()
     for _ in range(len(key_list)):
         embd_matrix[_, :] = vocab[key_list[_]]['vec']
-
+    import pdb; pdb.set_trace()
     # find independent components in the network
     G = nx.Graph()
     for node in neighbor_network_node_list:
         G.add_node(node)
     for link in neighbor_network_link_list:
         G.add_edge(link[0], link[1])
-
+    import pdb; pdb.set_trace()
     for c in nx.connected_components(G):
         nodeSet = G.subgraph(c).nodes()
         if len(nodeSet) > 1:
             if len(nodeSet) <= perturbation_constraint:
-                tem_key_list = nodeSet
+                tem_key_list = list(nodeSet)
                 tem_num_word = len(tem_key_list)
                 tem_embd_matrix = np.zeros([tem_num_word, dim_vec])
                 for _ in range(len(tem_key_list)):
@@ -289,15 +290,15 @@ def get_perturbation_set(dataset, data_path, similarity_threshold = 0.8, perturb
                     perturb[node]['set'] = tem_list
 
             else:
-                tem_key_list = nodeSet
+                import pdb; pdb.set_trace()
+                tem_key_list = list(nodeSet)
                 tem_num_word = len(tem_key_list)
                 tem_embd_matrix = np.zeros([tem_num_word, dim_vec])
                 for _ in range(len(tem_key_list)):
-                    tem_embd_matrix[_, :] = vocab[tem_key_list[_]]['vec']
-                
+                    tem_embd_matrix[_, :] = vocab[list(tem_key_list)[_]]['vec']
                 for node in tqdm(nodeSet):
                     perturb[node] = {'set': G.subgraph(c).neighbors(node), 'isdivide': 1}
-                    if len(perturb[node]['set']) > size_threshold:
+                    if len(list(perturb[node]['set'])) > size_threshold:
                         raise ValueError('size_threshold is too small')
 
                     dist_vec = np.dot(vocab[node]['vec'], tem_embd_matrix.T)

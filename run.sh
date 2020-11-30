@@ -1,12 +1,12 @@
 # data process
-
+export DATA_DIR=aclImdb
+export TASK_NAME=imdb
 python data_process.py \
 --dataset 'imdb' \
 --data_path $DATA_DIR \
 --embd_path 'imdb' \
 --similarity_threshold 0.8 \
 --perturbation_constraint 100 \
-
 # training
 
 python train.py \
@@ -14,10 +14,11 @@ python train.py \
 --task_name $TASK_NAME \
 --do_train \
 --data_dir $DATA_DIR \
---output_dir ./amazon_textcnn_output
-
+--output_dir ./imdb_textcnn_output \
+--model_type bert \
+--overwrite_output_dir
 # evaluation
-
+ 
 python evaluate.py \
 --similarity_threshold 0.8 \
 --perturbation_constraint 100 \
@@ -26,7 +27,7 @@ python evaluate.py \
 --mc_error 0.01 \
 --task_name imdb \
 --do_lower_case \
---data_dir imdb/ \
+--data_dir $DATA_DIR \
 --result_dir imdb/result \
 --model_type bert \
 --model_name_or_path bert-base-uncased \
